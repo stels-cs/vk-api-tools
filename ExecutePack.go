@@ -52,3 +52,8 @@ func (ep *ExecutePack) GetCode() string {
 func (ep *ExecutePack) Count() int {
 	return len(ep.calls)
 }
+
+func (ep *ExecutePack) Clear() {
+	ep.calls = make([]string, 0)
+	ep.size = 0
+}

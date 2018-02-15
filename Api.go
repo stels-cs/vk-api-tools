@@ -44,6 +44,7 @@ type Api struct {
 	version       string
 	Message       *Message
 	Users         *Users
+	Groups         *Groups
 	logger        *log.Logger
 	Captcha       chan string
 	captchaSid string
@@ -54,6 +55,7 @@ type Api struct {
 func GetApi(token AccessToken, transport Transport, logger *log.Logger) *Api {
 	m := Message{}
 	u := Users{}
+	g := Groups{}
 	api := &Api{
 		30,
 		token,
@@ -61,6 +63,7 @@ func GetApi(token AccessToken, transport Transport, logger *log.Logger) *Api {
 		"5.69",
 		&m,
 		&u,
+		&g,
 		logger,
 		make(chan string, 10),
 		"",
@@ -69,6 +72,7 @@ func GetApi(token AccessToken, transport Transport, logger *log.Logger) *Api {
 	}
 	m.api = api
 	u.api = api
+	g.api = api
 	return api
 }
 
