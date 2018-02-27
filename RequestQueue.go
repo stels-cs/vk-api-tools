@@ -1,21 +1,19 @@
-package Vk
+package VkApi
 
 import (
+	"encoding/json"
+	"errors"
 	"sync"
 	"time"
-	"errors"
-	"encoding/json"
 )
 
-const requestPerSecond = 3
-
 type RequestResult struct {
-	Res *ApiResponse
+	Res *Response
 	Err error
 }
 
 type RequestItem struct {
-	r     ApiMethod
+	r     Method
 	ch    chan RequestResult
 	index int
 }
@@ -30,19 +28,21 @@ type RequestQueue struct {
 	lastExecuteCount int
 	timer            *time.Timer
 	timerUp          bool
+	rps              int
 }
 
-func GetRequestQueue(api *Api) *RequestQueue {
+func GetRequestQueue(api *Api, rps int) *RequestQueue {
 	return &RequestQueue{
 		api:   api,
 		lock:  sync.Mutex{},
 		stop:  make(chan bool, 1),
-		item:  make(chan RequestItem, 25),
+		item:  make(chan RequestItem, rps*50),
 		timer: time.NewTimer(0),
+		rps:   rps,
 	}
 }
 
-func (rq *RequestQueue) Call(m ApiMethod) chan RequestResult {
+func (rq *RequestQueue) Call(m Method) chan RequestResult {
 	ch := make(chan RequestResult, 1)
 	rq.item <- RequestItem{m, ch, 0}
 	return ch
@@ -74,7 +74,7 @@ func (rq *RequestQueue) pass() bool {
 		return true
 	} else {
 		rq.lastExecuteCount++
-		if rq.lastExecuteCount > requestPerSecond {
+		if rq.lastExecuteCount > rq.rps {
 			return false
 		} else {
 			return true
@@ -114,7 +114,7 @@ func (rq *RequestQueue) execute() {
 	}
 	go func() {
 		code := pack.GetCode()
-		response, err := rq.api.Execute(code)
+		response, err := rq.api.Call("execute", P{"code": code})
 		if err != nil {
 			for _, item := range responseMap {
 				item.ch <- RequestResult{nil, err}
@@ -153,7 +153,7 @@ func (rq *RequestQueue) execute() {
 			} else {
 				copyRes := make(json.RawMessage, len(res))
 				copy(copyRes, res)
-				apiResponse := ApiResponse{
+				apiResponse := Response{
 					Response: &copyRes,
 					Error: ApiError{
 						Code: 0,
@@ -172,10 +172,10 @@ func (rq *RequestQueue) upTimer() {
 		return
 	}
 	rq.timerUp = true
-	if rq.lastExecuteCount > requestPerSecond {
+	if rq.lastExecuteCount > rq.rps {
 		now := time.Now().Nanosecond()
 		rq.timer.Reset(time.Duration(int64(time.Second) - int64(now)))
 	} else {
-		rq.timer.Reset((1000 / requestPerSecond) * time.Millisecond)
+		rq.timer.Reset(time.Duration(1000/rq.rps) * time.Millisecond)
 	}
 }

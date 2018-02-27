@@ -1,4 +1,4 @@
-package Vk
+package VkApi
 
 import (
 	"errors"
@@ -26,74 +26,77 @@ const LPCall = 70
 const LPCounter = 80
 const LPNotifications = 114
 
+const FLAG_OUTBOX = 2
+const FLAG_UNREAD = 1
+
 type ActorAndUser struct {
 	Actor int
-	User int
+	User  int
 }
 
 type MessageEvent struct {
-	MessageId int
-	Mask int
-	PeerId int
-	Timestamp int
-	Text string
-	RandomId int
-	ChatCreate bool
+	MessageId       int
+	Mask            int
+	PeerId          int
+	Timestamp       int
+	Text            string
+	RandomId        int
+	ChatCreate      bool
 	ChatTitleUpdate bool
 	ChatPhotoUpdate bool
-	ChatInviteUser *ActorAndUser
-	ChatKilUser *ActorAndUser
-	Title string
-	IsEditMessage bool
-	Emoji bool
-	FromAdmin int
-	Geo string
-	GeoProvider string
-	From int
+	ChatInviteUser  *ActorAndUser
+	ChatKilUser     *ActorAndUser
+	Title           string
+	IsEditMessage   bool
+	Emoji           bool
+	FromAdmin       int
+	Geo             string
+	GeoProvider     string
+	From            int
 }
 
 func (m *MessageEvent) Fill(data Update) error {
 	if len(data) >= 6 {
-		if d, ok:= data[1].(float64); ok {
+		if d, ok := data[1].(float64); ok {
 			m.MessageId = int(d)
 		} else {
 			return errors.New("No message id\n")
 		}
 
-		if d, ok:= data[2].(float64); ok {
+		if d, ok := data[2].(float64); ok {
 			m.Mask = int(d)
 		} else {
 			return errors.New("No message mask\n")
 		}
 
-		if d, ok:= data[3].(float64); ok {
+		if d, ok := data[3].(float64); ok {
 			m.PeerId = int(d)
 		} else {
 			return errors.New("No message peer id \n")
 		}
 
-		if d, ok:= data[4].(float64); ok {
+		if d, ok := data[4].(float64); ok {
 			m.Timestamp = int(d)
 		} else {
 			return errors.New("No message timestamp\n")
 		}
 
-		if d, ok:= data[5].(string); ok {
+		if d, ok := data[5].(string); ok {
 			m.Text = d
 		} else {
 			return errors.New("No message text\n")
 		}
 		if len(data) >= 7 {
-			if d, ok:= data[6].(map[string]interface{}); ok {
+			if d, ok := data[6].(map[string]interface{}); ok {
 				if err := m.fillAttachments(d); err != nil {
 					return err
 				}
 			} else {
-				return errors.New( "Bad attachments type\n" )
+				return errors.New("Bad attachments type\n")
 			}
 		}
 		if len(data) >= 9 {
-			if d, ok:= data[7].(float64); ok {
+			if d, ok := data[7].(float64); ok {
 				m.RandomId = int(d)
 			} else {
 				return errors.New("No message random id\n")
@@ -105,10 +108,10 @@ func (m *MessageEvent) Fill(data Update) error {
 	}
 }
 
-func (m *MessageEvent) fillAttachments( attachments map[string]interface{}) error {
+func (m *MessageEvent) fillAttachments(attachments map[string]interface{}) error {
 	if len(attachments) > 0 {
 		for key, value := range attachments {
-			if v, ok := value.(string); ok && key == "source_act"  {
+			if v, ok := value.(string); ok && key == "source_act" {
 				if v == "chat_create" {
 					m.ChatCreate = true
 				} else if v == "chat_title_update" {
@@ -178,4 +181,7 @@ func (m *MessageEvent) fillAttachments( attachments map[string]interface{}) erro
 		}
 	}
 	return nil
+}
+func (m *MessageEvent) IsOutMessage() bool {
+	return m.Mask&FLAG_OUTBOX == FLAG_OUTBOX
 }

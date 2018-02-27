@@ -1,15 +1,15 @@
-package Vk
+package VkApi
 
 import (
-	"net/http"
-	"time"
-	"strconv"
-	"io/ioutil"
+	"context"
 	"encoding/json"
-	"log"
 	"errors"
 	"fmt"
-	"context"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 type LongPollListener interface {
@@ -23,7 +23,6 @@ func (l *LongPollDefaultListener) NewMessage(msg MessageEvent)  {}
 func (l *LongPollDefaultListener) EditMessage(msg MessageEvent) {}
 
 type LPCloseError struct {
-
 }
 
 func (e *LPCloseError) Error() string {
@@ -58,11 +57,11 @@ type LongPollResponse struct {
 	MaxVersion int      `json:"nax_version"`
 }
 
-func GetLongPollServer(t AccessToken, logger *log.Logger) *LongPollServer {
+func GetLongPollServer(api *Api, logger *log.Logger) *LongPollServer {
 	return &LongPollServer{
-		api:      GetApi(t, GetHttpTransport(), logger),
-		stop:     make(chan bool, 1),
-		Logger:   logger,
+		api:    api,
+		stop:   make(chan bool, 1),
+		Logger: logger,
 	}
 }
 
@@ -110,14 +109,15 @@ func (s *LongPollServer) getUpdates() (*LongPollResponse, error) {
 			data, err := ioutil.ReadAll(res.Body)
 			res.Body.Close()
 			if err != nil {
-				return nil, &TransportBadResponse{
-					Method(s.Server),
-					Params{
+				return nil, &TransportError{
+					string(s.Server),
+					P{
 						"ts":  strconv.Itoa(s.Ts),
 						"key": s.Key,
 					},
 					data,
 					TransportExternalData(res.Header),
+					nil,
 				}
 			}
 			response := LongPollResponse{}
@@ -126,7 +126,7 @@ func (s *LongPollServer) getUpdates() (*LongPollResponse, error) {
 				return nil, err
 			}
 			if response.Failed == 0 && response.Ts == 0 {
-				return nil, errors.New( "Long poll bad response: " + string(data) )
+				return nil, errors.New("Long poll bad response: " + string(data))
 			}
 			return &response, nil
 		}
@@ -134,15 +134,24 @@ func (s *LongPollServer) getUpdates() (*LongPollResponse, error) {
 }
 
 func (s *LongPollServer) up(updateTs bool) error {
-	data, err := s.api.Message.GetLongPollServer(true, 2)
+	data, err := s.api.run(
+		"messages.getLongPollServer",
+		P{
+			"lp_version": "2",
+			"need_pts":   "1",
+		}, 30)
 	if err != nil {
 		return err
 	}
+	var e error
 	if updateTs {
-		s.Ts = data.Ts
+		s.Ts, e = data.GetInt("ts")
 	}
-	s.Key = data.Key
-	s.Server = data.Server
+	s.Key, e = data.GetString("key")
+	s.Server, e = data.GetString("server")
+	if e != nil {
+		return e
+	}
 	return nil
 }
 
@@ -163,7 +172,7 @@ func (s *LongPollServer) Start() error {
 				return nil
 			}
 			if s.Logger != nil {
-				s.Logger.Println(PrintError(err))
+				s.Logger.Println(printError(err))
 			}
 		} else if updates.Failed == 0 {
 			if updates.Ts > s.Ts {
@@ -206,7 +215,7 @@ func (s *LongPollServer) Start() error {
 
 func (s *LongPollServer) onError(err error) {
 	if s.Logger != nil {
-		s.Logger.Println(PrintError(err))
+		s.Logger.Println(printError(err))
 	}
 }
 

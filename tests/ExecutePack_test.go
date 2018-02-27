@@ -1,15 +1,16 @@
-package Vk
+package VkApiTest
 
 import (
-	"testing"
-	"github.com/stels-cs/quiz-bot/Vk"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/stels-cs/quiz-bot/Vk"
+	"github.com/stels-cs/vk-api-tools"
+	"testing"
 	"time"
 )
 
-func checkKatrya(userArr []Vk.User) error {
+func checkKatya(userArr []VkApi.User) error {
 	if len(userArr) != 1 {
 		return errors.New(fmt.Sprintf("Expect 1 user in array but got %d", len(userArr)))
 	}
@@ -22,8 +23,8 @@ func checkKatrya(userArr []Vk.User) error {
 }
 
 func TestExecutePack(t *testing.T) {
-	pack := Vk.ExecutePack{}
-	index, err := pack.Add(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
+	pack := VkApi.ExecutePack{}
+	index, err := pack.Add(VkApi.GetApiMethod("users.get", VkApi.P{"user_ids": "2050"}))
 	if err != nil {
 		t.Error(err)
 	}
@@ -41,13 +42,14 @@ func TestExecutePack(t *testing.T) {
 }
 
 func TestExecutePackCall(t *testing.T) {
-	pack := Vk.ExecutePack{}
-	index, err := pack.Add(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
+	pack := VkApi.ExecutePack{}
+	index, err := pack.Add(VkApi.GetApiMethod("users.get", VkApi.P{"user_ids": "2050"}))
 	if err != nil {
 		t.Error(err)
 	}
-	api := Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil)
-	res, err := api.Execute(pack.GetCode())
+	tr := ft(`{"response":[[{"id":2050}]]}`)
+	api := VkApi.CreateApi("", "5.71", tr, 30)
+	res, err := api.Call("execute", VkApi.P{"code": pack.GetCode()})
 	if err != nil {
 		t.Error(err)
 		return
@@ -64,26 +66,25 @@ func TestExecutePackCall(t *testing.T) {
 		t.Errorf("There are %d execure errors on good request", len(res.ExecuteErrors))
 	}
 	userRes := data[index]
-	var users []Vk.User
+	var users []VkApi.User
 	err = json.Unmarshal(userRes, &users)
 	if err != nil {
 		t.Error(err)
 	}
-	err = checkKatrya(users)
+	err = checkKatya(users)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-
-func request(rq *Vk.RequestQueue, t *testing.T) {
-	res := <-rq.Call(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
+func request(rq *VkApi.RequestQueue, t *testing.T) {
+	res := <-rq.Call(VkApi.GetApiMethod("users.get", VkApi.P{"user_ids": "2050"}))
 	if res.Err != nil {
 		t.Error(res.Err)
 		return
 	}
 
-	var users []Vk.User
+	var users []VkApi.User
 	err := json.Unmarshal(*res.Res.Response, &users)
 
 	if err != nil {
@@ -91,15 +92,15 @@ func request(rq *Vk.RequestQueue, t *testing.T) {
 		return
 	}
 
-	err = checkKatrya(users)
+	err = checkKatya(users)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-
 func TestRequestQueue(t *testing.T) {
-	rq := Vk.GetRequestQueue(Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil))
+	tr := ft(`{"response":[[{"id":2050}]]}`)
+	rq := VkApi.GetRequestQueue(VkApi.CreateApi("", "5.71", tr, 30), 3)
 	go rq.Start()
 	defer rq.Stop()
 
@@ -107,7 +108,9 @@ func TestRequestQueue(t *testing.T) {
 }
 
 func TestRequestQueueManyRequest(t *testing.T) {
-	rq := Vk.GetRequestQueue(Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil))
+	tr := ft(`{"response":[[{"id":2050}],[{"id":2050}],[{"id":2050}],[{"id":2050}],[{"id":2050}],[{"id":2050}]]}`)
+	tr.SleepTime = 6
+	rq := VkApi.GetRequestQueue(VkApi.CreateApi("", "5.71", tr, 30), 3)
 	go rq.Start()
 	defer rq.Stop()
 
@@ -122,38 +125,40 @@ func TestRequestQueueManyRequest(t *testing.T) {
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
 
-	go func () {
+	go func() {
 		request(rq, t)
 		end1 <- true
-	} ()
+	}()
 
-	go func () {
+	go func() {
 		request(rq, t)
 		end2 <- true
-	} ()
+	}()
 
-	go func () {
+	go func() {
 		request(rq, t)
 		end3 <- true
-	} ()
+	}()
 
 	<-end1
 	ts := time.Now().UnixNano()
 	<-end2
 	<-end3
 	diff := time.Now().UnixNano() - ts
-	if diff > int64(100 * time.Millisecond) {
+	if diff > int64(1*time.Millisecond) {
 		t.Errorf("Multi request not stacked %dns", diff)
 	}
 }
 
 func TestRequestQueueOneGoodOneFail(t *testing.T) {
-	rq := Vk.GetRequestQueue(Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil))
+	tr := ft(`{"response":[[{"id":2050}],false],"execute_errors":[{"error_code":15}]}`)
+	tr.SleepTime = 6
+	rq := VkApi.GetRequestQueue(VkApi.CreateApi("", "5.71", tr, 30), 3)
 	go rq.Start()
 	defer rq.Stop()
 
-	var end1 chan Vk.RequestResult
-	var end2 chan Vk.RequestResult
+	var end1 chan VkApi.RequestResult
+	var end2 chan VkApi.RequestResult
 
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
@@ -162,17 +167,17 @@ func TestRequestQueueOneGoodOneFail(t *testing.T) {
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
 
-	end1 = rq.Call(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
-	end2 = rq.Call(Vk.GetApiMethod("messages.send", Vk.Params{"peer_id": "1", "message":"test"}))
+	end1 = rq.Call(VkApi.GetApiMethod("users.get", VkApi.P{"user_ids": "2050"}))
+	end2 = rq.Call(VkApi.GetApiMethod("messages.send", VkApi.P{"peer_id": "1", "message": "test"}))
 
-	res1 := <- end1
+	res1 := <-end1
 
 	if res1.Err != nil {
 		t.Error(res1.Err)
 		return
 	}
 
-	var users []Vk.User
+	var users []VkApi.User
 	err := json.Unmarshal(*res1.Res.Response, &users)
 
 	if err != nil {
@@ -180,19 +185,19 @@ func TestRequestQueueOneGoodOneFail(t *testing.T) {
 		return
 	}
 
-	err = checkKatrya(users)
+	err = checkKatya(users)
 	if err != nil {
 		t.Error(err)
 	}
 
-	res2 := <- end2
+	res2 := <-end2
 
 	if res2.Err == nil {
 		t.Error("Not error on bad request")
 		return
 	}
 
-	if api, ok:= res2.Err.(*Vk.ApiError); ok {
+	if api, ok := res2.Err.(*VkApi.ApiError); ok {
 		if api.Code != 15 {
 			t.Errorf("Wrong error code expext 15 got %d %s", api.Code, api.Error())
 		}
@@ -202,12 +207,40 @@ func TestRequestQueueOneGoodOneFail(t *testing.T) {
 }
 
 func TestRequestQueueOneFailOneGood(t *testing.T) {
-	rq := Vk.GetRequestQueue(Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil))
+	tr := &VkApi.FakeTransportPoll{
+		[]VkApi.FakeTransport{
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[false,[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+		},
+	}
+	rq := VkApi.GetRequestQueue(VkApi.CreateApi("", "5.71", tr, 30), 3)
 	go rq.Start()
 	defer rq.Stop()
 
-	var end1 chan Vk.RequestResult
-	var end2 chan Vk.RequestResult
+	var end1 chan VkApi.RequestResult
+	var end2 chan VkApi.RequestResult
 
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
@@ -216,17 +249,17 @@ func TestRequestQueueOneFailOneGood(t *testing.T) {
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
 
-	end2 = rq.Call(Vk.GetApiMethod("messages.send", Vk.Params{"peer_id": "1", "message":"test"}))
-	end1 = rq.Call(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
+	end2 = rq.Call(VkApi.GetApiMethod("messages.send", VkApi.P{"peer_id": "1", "message": "test"}))
+	end1 = rq.Call(VkApi.GetApiMethod("users.get", VkApi.P{"user_ids": "2050"}))
 
-	res1 := <- end1
+	res1 := <-end1
 
 	if res1.Err != nil {
 		t.Error(res1.Err)
 		return
 	}
 
-	var users []Vk.User
+	var users []VkApi.User
 	err := json.Unmarshal(*res1.Res.Response, &users)
 
 	if err != nil {
@@ -234,19 +267,19 @@ func TestRequestQueueOneFailOneGood(t *testing.T) {
 		return
 	}
 
-	err = checkKatrya(users)
+	err = checkKatya(users)
 	if err != nil {
 		t.Error(err)
 	}
 
-	res2 := <- end2
+	res2 := <-end2
 
 	if res2.Err == nil {
 		t.Error("Not error on bad request")
 		return
 	}
 
-	if api, ok:= res2.Err.(*Vk.ApiError); ok {
+	if api, ok := res2.Err.(*VkApi.ApiError); ok {
 		if api.Code != 15 {
 			t.Errorf("Wrong error code expext 15 got %d %s", api.Code, api.Error())
 		}
@@ -256,11 +289,39 @@ func TestRequestQueueOneFailOneGood(t *testing.T) {
 }
 
 func TestRequestQueueOneFail(t *testing.T) {
-	rq := Vk.GetRequestQueue(Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil))
+	tr := &VkApi.FakeTransportPoll{
+		[]VkApi.FakeTransport{
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[false],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+		},
+	}
+	rq := VkApi.GetRequestQueue(VkApi.CreateApi("", "5.71", tr, 30), 3)
 	go rq.Start()
 	defer rq.Stop()
 
-	var end2 chan Vk.RequestResult
+	var end2 chan VkApi.RequestResult
 
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
@@ -269,17 +330,17 @@ func TestRequestQueueOneFail(t *testing.T) {
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
 
-	end2 = rq.Call(Vk.GetApiMethod("messages.send", Vk.Params{"peer_id": "1", "message":"test"}))
-	//end1 = rq.run(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
+	end2 = rq.Call(VkApi.GetApiMethod("messages.send", VkApi.P{"peer_id": "1", "message": "test"}))
+	//end1 = rq.run(Vk.GetApiMethod("users.get", Vk.P{"user_ids": "2050"}))
 
-	res2 := <- end2
+	res2 := <-end2
 
 	if res2.Err == nil {
 		t.Error("Not error on bad request")
 		return
 	}
 
-	if api, ok:= res2.Err.(*Vk.ApiError); ok {
+	if api, ok := res2.Err.(*VkApi.ApiError); ok {
 		if api.Code != 15 {
 			t.Errorf("Wrong error code expext 15 got %d %s", api.Code, api.Error())
 		}
@@ -289,13 +350,41 @@ func TestRequestQueueOneFail(t *testing.T) {
 }
 
 func TestRequestQueueTwoFailOneGood(t *testing.T) {
-	rq := Vk.GetRequestQueue(Vk.GetApi(Vk.AccessToken{Token: "7e3d0d54ec8d5050ef540d16fd978fe269f615de0ced94b9f97553b245727ab3844b08572efdbaa8dde8a"}, Vk.GetHttpTransport(), nil))
+	tr := &VkApi.FakeTransportPoll{
+		[]VkApi.FakeTransport{
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[[{"id":2050}]],"execute_errors":[{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+			{
+				[]byte(`{"response":[false,false,[{"id":2050}]],"execute_errors":[{"error_code":15},{"error_code":15}]}`),
+				nil,
+				VkApi.TransportExternalData{},
+				56,
+			},
+		},
+	}
+	rq := VkApi.GetRequestQueue(VkApi.CreateApi("", "5.71", tr, 30), 3)
 	go rq.Start()
 	defer rq.Stop()
 
-	var end1 chan Vk.RequestResult
-	var end2 chan Vk.RequestResult
-	var end3 chan Vk.RequestResult
+	var end1 chan VkApi.RequestResult
+	var end2 chan VkApi.RequestResult
+	var end3 chan VkApi.RequestResult
 
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
@@ -304,18 +393,18 @@ func TestRequestQueueTwoFailOneGood(t *testing.T) {
 	go request(rq, t)
 	time.Sleep(time.Millisecond)
 
-	end2 = rq.Call(Vk.GetApiMethod("messages.send", Vk.Params{"peer_id": "1", "message":"test"}))
-	end3 = rq.Call(Vk.GetApiMethod("messages.send", Vk.Params{"peer_id": "1", "message":"test"}))
-	end1 = rq.Call(Vk.GetApiMethod("users.get", Vk.Params{"user_ids": "2050"}))
+	end2 = rq.Call(VkApi.GetApiMethod("messages.send", VkApi.P{"peer_id": "1", "message": "test"}))
+	end3 = rq.Call(VkApi.GetApiMethod("messages.send", VkApi.P{"peer_id": "1", "message": "test"}))
+	end1 = rq.Call(VkApi.GetApiMethod("users.get", VkApi.P{"user_ids": "2050"}))
 
-	res1 := <- end1
+	res1 := <-end1
 
 	if res1.Err != nil {
 		t.Error(res1.Err)
 		return
 	}
 
-	var users []Vk.User
+	var users []VkApi.User
 	err := json.Unmarshal(*res1.Res.Response, &users)
 
 	if err != nil {
@@ -323,19 +412,19 @@ func TestRequestQueueTwoFailOneGood(t *testing.T) {
 		return
 	}
 
-	err = checkKatrya(users)
+	err = checkKatya(users)
 	if err != nil {
 		t.Error(err)
 	}
 
-	res2 := <- end2
+	res2 := <-end2
 
 	if res2.Err == nil {
 		t.Error("Not error on bad request")
 		return
 	}
 
-	if api, ok:= res2.Err.(*Vk.ApiError); ok {
+	if api, ok := res2.Err.(*VkApi.ApiError); ok {
 		if api.Code != 15 {
 			t.Errorf("Wrong error code expext 15 got %d %s", api.Code, api.Error())
 		}
@@ -343,14 +432,14 @@ func TestRequestQueueTwoFailOneGood(t *testing.T) {
 		t.Error("Wrong error type")
 	}
 
-	res3 := <- end3
+	res3 := <-end3
 
 	if res3.Err == nil {
 		t.Error("Not error on bad request")
 		return
 	}
 
-	if api, ok:= res3.Err.(*Vk.ApiError); ok {
+	if api, ok := res3.Err.(*VkApi.ApiError); ok {
 		if api.Code != 15 {
 			t.Errorf("Wrong error code expext 15 got %d %s", api.Code, api.Error())
 		}

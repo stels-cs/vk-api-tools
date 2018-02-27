@@ -1,63 +1,51 @@
-package Vk
+package VkApi
 
 import (
-	"fmt"
-	"strconv"
 	"encoding/json"
+	"fmt"
 )
 
-func iif(cond bool, ok string, bad string) string  {
-	if cond {
-		return ok
-	} else {
-		return bad
+var defaultApi *Api
+
+func getDefaultApi() *Api {
+	if defaultApi == nil {
+		defaultApi = CreateApi("", "5.71", GetHttpTransport(), 30)
 	}
+	return defaultApi
 }
 
 func requestParamsToString(params []RequestedParams) string {
 	str := ""
 	for _, v := range params {
-		if str != "" {str += " "}
+		if str != "" {
+			str += " "
+		}
 		str += v.Key + "=" + v.Value
 	}
 	return str
 }
 
-
-func callToString(method Method, params Params) string  {
+func callToString(method string, params P) string {
 	return string(method) + " " + params.toString()
 }
 
-func PrintError(err error) string  {
-	if e, ok := err.(*AuthError); ok {
-		return fmt.Sprintf("[AuthError] %s", e.Error())
-	} else if e, ok := err.(*ApiError); ok {
+func printError(err error) string {
+	if e, ok := err.(*ApiError); ok {
 		if e.CaptchaSid != "" {
 			return fmt.Sprintf("[CaptchaError] key %s image %s %s", e.CaptchaSid, e.CaptchaImg, e.Error())
 		} else {
 			return fmt.Sprintf("[ApiError] %s", e.Error())
 		}
-	} else if e, ok := err.(*TransportBadResponse); ok {
-		return fmt.Sprintf("[TransportBadResponse] %s", e.Error())
+	} else if e, ok := err.(*TransportError); ok {
+		return fmt.Sprintf("[TransportError] %s", e.Error())
 	} else {
 		return fmt.Sprintf("[Error] %s", err.Error())
 	}
 }
 
-func intToString( items []int ) string {
-	str := ""
-	for _,v:=range items {
-		if str != "" {
-			str += ","
-		}
-		str += strconv.Itoa(v)
-	}
-	return str
-}
-
-func isBoolAndFalse( raw *json.RawMessage ) bool {
+func isBoolAndFalse(raw *json.RawMessage) bool {
 	var d interface{}
-	err := json.Unmarshal( *raw, &d )
+	err := json.Unmarshal(*raw, &d)
 	if err != nil {
 		return false
 	}
@@ -65,4 +53,21 @@ func isBoolAndFalse( raw *json.RawMessage ) bool {
 		return true
 	}
 	return false
+}
+
+func Call(method string, params P) (Response, error) {
+	api := getDefaultApi()
+	return api.Call(string(method), params)
+}
+
+// Выполняет запрос к API ВКонтакте, в случае любых серевых ошибок или кодов ошибок (1, 9, 6, 9, 10, 603) повторяет запрос до 30 раз.
+// 	users := make([]struct{
+// 		Id        int    `json:"id"`
+// 		FirstName string `json:"first_name"`
+// 		LastName  string `json:"last_name"`
+// 	}, 0)
+// 	err := VkApi.Exec("users.get", VkApi.P{"user_ids": "2050,andrew"}, &users)
+func Exec(method string, params P, s interface{}) error {
+	api := getDefaultApi()
+	return api.Exec(string(method), params, s)
 }
