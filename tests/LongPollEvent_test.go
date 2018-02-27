@@ -24,7 +24,7 @@ func TestFillNewMessageEvent(t *testing.T) {
 	update := updates[0]
 	if typeId, ok := update[0].(float64); ok {
 		if typeId != 4 {
-			t.Errorf("Invalid event type, must be 4 but %d", typeId)
+			t.Errorf("Invalid event type, expected 4 got %d", int(typeId))
 		}
 		msg := VkApi.MessageEvent{}
 		err := msg.Fill(update)
@@ -59,7 +59,7 @@ func TestFillMessageWithInviteEvent(t *testing.T) {
 	update := updates[0]
 	if typeId, ok := update[0].(float64); ok {
 		if typeId != 4 {
-			t.Errorf("Invalid event type, must be 4 but %d", typeId)
+			t.Errorf("Invalid event type, expected 4 go %d", int(typeId))
 		}
 		msg := VkApi.MessageEvent{}
 		err := msg.Fill(update)

@@ -1,3 +1,6 @@
+[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://tldrlegal.com/license/mit-license)
+[![Build Status](https://travis-ci.org/stels-cs/vk-api-tools.svg?branch=master)](https://travis-ci.org/stels-cs/vk-api-tools)
+
 # Golang API Вконтакте
 
 ```bash
