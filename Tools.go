@@ -71,3 +71,43 @@ func Exec(method string, params P, s interface{}) error {
 	api := getDefaultApi()
 	return api.Exec(string(method), params, s)
 }
+
+func IsTransportError(err interface{}) bool {
+	if _, ok := err.(TransportError); ok {
+		return true
+	}
+	if _, ok := err.(*TransportError); ok {
+		return true
+	}
+	return false
+}
+
+func IsApiError(err interface{}) bool {
+	if _, ok := err.(ApiError); ok {
+		return true
+	}
+	if _, ok := err.(*ApiError); ok {
+		return true
+	}
+	return false
+}
+
+func CastToApiError(err interface{}) *ApiError {
+	if e, ok := err.(ApiError); ok {
+		return &e
+	}
+	if e, ok := err.(*ApiError); ok {
+		return e
+	}
+	panic("Cant cast error to *ApiError")
+}
+
+func CastToTransportError(err interface{}) *TransportError {
+	if e, ok := err.(TransportError); ok {
+		return &e
+	}
+	if e, ok := err.(*TransportError); ok {
+		return e
+	}
+	panic("Cant cast error to *ApiError")
+}

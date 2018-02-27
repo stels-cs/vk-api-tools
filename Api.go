@@ -213,7 +213,6 @@ func CreateApi(t, v string, transport Transport, maxRetryCount int) *Api {
 
 func (api *Api) run(method string, params P, retryCount int) (Response, error) {
 	response := Response{}
-	response.TransportError = true
 	b := json.RawMessage(``)
 	response.Response = &b
 
@@ -258,13 +257,12 @@ func (api *Api) run(method string, params P, retryCount int) (Response, error) {
 		}
 	}
 
-	response.TransportError = false
-
 	if response.canRetry() && retryCount > 0 {
-		response.Error.CallMethod = &method
-		response.Error.CallParams = &params
 		return api.retryCall(method, params, retryCount)
 	}
+
+	response.Error.CallMethod = &method
+	response.Error.CallParams = &params
 
 	if response.success() {
 		return response, nil

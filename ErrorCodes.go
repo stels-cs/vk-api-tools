@@ -64,7 +64,7 @@ const Error24 = 24
 const Error27 = 27
 
 // Ключ доступа приложения недействителен.
-const Error28 = 28
+const BadApiKeyError = 28
 
 // Один из необходимых параметров был не передан или неверен.
 const Error100 = 100

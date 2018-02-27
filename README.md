@@ -4,7 +4,13 @@
 go get git@github.com:stels-cs/vk-api-tools.git
 ```
 
-### Базовый пример использования:
+- [VkApi](docs/VkApi.md)
+- [VkApi.Response](docs/VkApi.Response.md)
+- [VkApi.ApiError](docs/VkApi.ApiError.md)
+- [VkApi.TransportError](docs/VkApi.TransportError.md)
+- [VkApi.AnyModel](docs/VkApi.AnyModel.md)
+
+### Пример:
 
 ````go
 package main
@@ -38,7 +44,7 @@ func main() {
 Андрей Рогозов #6492
 ```
 
-### Пример использования без структур
+### Пример без структур
 
 ```go
 package main
@@ -65,6 +71,8 @@ func main() {
 Катя – Санкт-Петербург
 Александр – Москва
 ```
+
+Подробнее про [VkApi.Response](docs/VkApi.Response.md)
 
 **Важно!** По умолчанию VkApi.Exec и VkApi.Call будут повторят запрос до 30 раз в случае любых сетевых ошибок или если от API придет один из следующих кодов ошибки: 1, 9, 6, 9, 10, 603 [vk.com/dev/errors](https://vk.com/dev/errors).
 Чтобы отключить это посмотрите пример ниже.
@@ -106,3 +114,11 @@ func main() {
 Катя Лебедева #2050
 Андрей Рогозов #6492
 ```
+
+### Обработка ошибок
+
+Метод VkApi.Call и VkApi.Exec могут вернуть три типа ошибок
+
+- [VkApi.TransportError](docs/VkApi.TransportError.md) - Произошла ошибка сети, или сервреа ВКонтакте временно недоступны 
+- [VkApi.ApiError](docs/VkApi.ApiError.md) - API ВКонтакте вернуло ошибку
+- ```все остальные типы``` - в основном ошибки парсинга json, такое можно вернуть только VkApi.Exec

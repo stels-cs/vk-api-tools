@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stels-cs/quiz-bot/Vk"
 	"github.com/stels-cs/vk-api-tools"
 	"testing"
 	"time"
 )
 
-func checkKatya(userArr []VkApi.User) error {
+type User struct {
+	Id int `json:"id"`
+}
+
+func checkKatya(userArr []User) error {
 	if len(userArr) != 1 {
 		return errors.New(fmt.Sprintf("Expect 1 user in array but got %d", len(userArr)))
 	}
@@ -66,7 +69,7 @@ func TestExecutePackCall(t *testing.T) {
 		t.Errorf("There are %d execure errors on good request", len(res.ExecuteErrors))
 	}
 	userRes := data[index]
-	var users []VkApi.User
+	var users []User
 	err = json.Unmarshal(userRes, &users)
 	if err != nil {
 		t.Error(err)
@@ -84,7 +87,7 @@ func request(rq *VkApi.RequestQueue, t *testing.T) {
 		return
 	}
 
-	var users []VkApi.User
+	var users []User
 	err := json.Unmarshal(*res.Res.Response, &users)
 
 	if err != nil {
@@ -177,7 +180,7 @@ func TestRequestQueueOneGoodOneFail(t *testing.T) {
 		return
 	}
 
-	var users []VkApi.User
+	var users []User
 	err := json.Unmarshal(*res1.Res.Response, &users)
 
 	if err != nil {
@@ -259,7 +262,7 @@ func TestRequestQueueOneFailOneGood(t *testing.T) {
 		return
 	}
 
-	var users []VkApi.User
+	var users []User
 	err := json.Unmarshal(*res1.Res.Response, &users)
 
 	if err != nil {
@@ -404,7 +407,7 @@ func TestRequestQueueTwoFailOneGood(t *testing.T) {
 		return
 	}
 
-	var users []VkApi.User
+	var users []User
 	err := json.Unmarshal(*res1.Res.Response, &users)
 
 	if err != nil {

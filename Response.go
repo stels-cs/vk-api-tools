@@ -43,7 +43,6 @@ type Response struct {
 		Code    int    `json:"error_code"`
 		Message string `json:"error_msg"`
 	} `json:"execute_errors"`
-	TransportError bool
 }
 
 func (r *Response) success() bool {

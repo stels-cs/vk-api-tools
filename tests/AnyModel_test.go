@@ -6,6 +6,64 @@ import (
 	"testing"
 )
 
+func TestUseCase(t *testing.T) {
+	any := VkApi.AnyModel(`{
+  "first_name":"Ivan",
+  "last_name":"Ivanov",
+  "city":{
+    "id":19,
+    "title":"Moscow"
+  },
+  "friends":[ {"id":1,"name":"Jon","verify":true},{"id":2,"name":"Bob","verify":false},{"id":3,"name":"Alexandra"} ]
+}`)
+
+	firstName := any.QStringDef("first_name", "")
+	cityName := any.QStringDef("city.title", "")
+
+	hasAge := any.QString("age") != nil
+
+	firstFriendName := any.QStringDef("friends.0.name", "")
+	lastFriendId := any.QIntDef("friends.-1.id", -1)
+
+	if firstName != "Ivan" {
+		t.Error("Expexted Ivan, got", firstName)
+	}
+
+	if cityName != "Moscow" {
+		t.Error("Expected Moscow, got", cityName)
+	}
+
+	if firstFriendName != "Jon" {
+		t.Error("Expected Jon, got", firstFriendName)
+	}
+
+	if lastFriendId != 3 {
+		t.Error("Expected 3, got", lastFriendId)
+	}
+
+	if hasAge != false {
+		t.Error("Expected no age, got", hasAge)
+	}
+
+	friends := any.QSlice("friends")
+
+	buff := ""
+	if friends != nil {
+		for _, friend := range *friends {
+			v := friend.QBool("verify")
+
+			if v == nil || *v == true {
+				buff = buff + friend.QStringDef("name", "") + "\n"
+			}
+		}
+	}
+
+	if buff != "Jon\nAlexandra\n" {
+		t.Error("Expected, Jon\nAlexandra\n, got", buff)
+	}
+
+}
+
 func TestAnyModelBasicInt(t *testing.T) {
 	any := VkApi.AnyModel("10")
 
