@@ -73,8 +73,9 @@ func main() {
 ```
 
 Подробнее про [VkApi.Response](docs/VkApi.Response.md)
+и про [QStringDef](docs/VkApi.AnyModel.md)
 
-**Важно!** По умолчанию VkApi.Exec и VkApi.Call будут повторят запрос до 30 раз в случае любых сетевых ошибок или если от API придет один из следующих кодов ошибки: 1, 9, 6, 9, 10, 603 [vk.com/dev/errors](https://vk.com/dev/errors).
+**Важно!** По умолчанию VkApi.Exec и VkApi.Call будут повторят запрос до 30 раз в случае любых сетевых ошибок или если API вернет кодо ошибки: 1, 9, 6, 9, 10, 603 [vk.com/dev/errors](https://vk.com/dev/errors).
 Чтобы отключить это посмотрите пример ниже.
 
 ### Пример создания объекта api
@@ -88,9 +89,9 @@ import (
 )
 
 func main() {
-    token := ""
-    v := "5.71"
-    retryTimesIfFailed := 0 //Не повторять запросы в случае любых ошибок
+    token := "3bac432bdcb1234b1...."  //API ключ доступа
+    v := "5.71" //Версия API по умолчанию
+    retryTimesIfFailed := 0 //Не повторять запросы в случае любых ошибок, можно поставить 5, тогда запрос будет повторен 5 раз в случае ошибок
 
     api := VkApi.CreateApi(token, v, VkApi.GetHttpTransport(), retryTimesIfFailed)
 
@@ -119,6 +120,6 @@ func main() {
 
 Метод VkApi.Call и VkApi.Exec могут вернуть три типа ошибок
 
-- [VkApi.TransportError](docs/VkApi.TransportError.md) - Произошла ошибка сети, или сервреа ВКонтакте временно недоступны 
+- [VkApi.TransportError](docs/VkApi.TransportError.md) - Произошла ошибка сети, или сервер ВКонтакте временно недоступен 
 - [VkApi.ApiError](docs/VkApi.ApiError.md) - API ВКонтакте вернуло ошибку
-- ```все остальные типы``` - в основном ошибки парсинга json, такое можно вернуть только VkApi.Exec
+- ```все остальные типы``` - ошибки парсинга json, только для VkApi.Exec

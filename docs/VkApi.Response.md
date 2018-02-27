@@ -13,6 +13,12 @@ type Response struct {
 ```
 
 ```go
+func (r Response) QStringDef(key, def string) string
+```
+Создает объект [VkApi.AnyModel](VkApi.AnyModel.md) из r.Response и возворащает результат QStringDef на этом объекте
+
+
+```go
 func (r Response) Any() *VkApi.AnyModel
 ```
 
@@ -35,3 +41,5 @@ u, _ := res.FirstAny()
 name, _ := u.GetString("first_name")
 //name == "Катя"
 ```
+
+[Назад](../README.md)

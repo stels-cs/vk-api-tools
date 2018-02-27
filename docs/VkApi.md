@@ -28,3 +28,5 @@ func VkApi.Call(method string, params VkApi.P) (VkApi.Response, error)
 - [VkApi.TransportError](VkApi.TransportError.md) - Произошла ошибка сети, или сервреа ВКонтакте временно недоступны 
 - [VkApi.ApiError](VkApi.ApiError.md) - API ВКонтакте вернуло ошибку
 - ```все остальные типы``` - в основном ошибки парсинга json, такое можно вернуть только VkApi.Exec
+
+[Назад](../README.md)

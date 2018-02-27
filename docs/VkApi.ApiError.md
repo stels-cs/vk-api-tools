@@ -11,3 +11,5 @@ type ApiError struct {
 	CallParams *VkApi.P // Ссылка на парамтеры которые были переданы
 }
 ```
+
+[Назад](../README.md)

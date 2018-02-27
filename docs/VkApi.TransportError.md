@@ -6,6 +6,8 @@ type TransportError struct {
 	Params      P // Вызываемые параметры
 	Response    []byte // Ответ от сервера ВК (если был)
 	Headers     TransportExternalData // Заголовки от сервера ВК (если были)
-	ParentError error //Исходная ошибка (тут может быть ошибка сети например или таймаут)
+	ParentError error //Исходная ошибка (например, тут может быть ошибка сети или таймаут)
 }
 ```
+
+[Назад](../README.md)
