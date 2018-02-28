@@ -51,7 +51,7 @@ firstName := any.QStringDef("first_name", "")
 cityName := any.QStringDef("city.title", "")
 ```
 
-вторым аргуметом мы передали значение по умолчанмю, можно использовать такой подход
+вторым аргументом мы передали значение по умолчанию, можно использовать такой подход
 
 ```go
 firstName := any.QString("first_name")

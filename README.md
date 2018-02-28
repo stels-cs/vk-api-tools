@@ -1,7 +1,7 @@
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://tldrlegal.com/license/mit-license)
 [![Build Status](https://travis-ci.org/stels-cs/vk-api-tools.svg?branch=master)](https://travis-ci.org/stels-cs/vk-api-tools)
 
-# Golang API Вконтакте
+# Golang API ВКонтакте
 
 ```bash
 go get git@github.com:stels-cs/vk-api-tools.git
@@ -47,7 +47,7 @@ func main() {
 Андрей Рогозов #6492
 ```
 
-### Пример без структур
+### Пример без структур:
 
 ```go
 package main

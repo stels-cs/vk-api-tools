@@ -8,7 +8,7 @@ type ApiError struct {
 	CaptchaSid string            `json:"captcha_sid"`
 	CaptchaImg string            `json:"captcha_img"`
 	CallMethod *string // Ссылка на метод который был вызван
-	CallParams *VkApi.P // Ссылка на парамтеры которые были переданы
+	CallParams *VkApi.P // Ссылка на параметры которые были переданы
 }
 ```
 
