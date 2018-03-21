@@ -23,13 +23,13 @@ type ApiError struct {
 func (e *ApiError) Error() string {
 	str := strconv.Itoa(e.Code) + " " + e.Message
 	if len(e.Params) > 0 {
-		str += " " + requestParamsToString(e.Params)
+		str += "\n Params: " + requestParamsToString(e.Params)
 	}
 	if e.CallMethod != nil {
-		str += " run:" + string(*e.CallMethod)
+		str += "\n Call method: " + string(*e.CallMethod)
 	}
 	if e.CallParams != nil {
-		str += " " + e.CallParams.toString()
+		str += "\n Call params: " + e.CallParams.toString()
 	}
 
 	return str

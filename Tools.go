@@ -92,6 +92,14 @@ func IsApiError(err interface{}) bool {
 	return false
 }
 
+func IsCaptchaError(err interface{}) bool {
+	if IsApiError(err) {
+		e := CastToApiError(err)
+		return e.Code == CaptchaError
+	}
+	return false
+}
+
 func CastToApiError(err interface{}) *ApiError {
 	if e, ok := err.(ApiError); ok {
 		return &e
