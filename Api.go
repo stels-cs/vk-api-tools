@@ -3,7 +3,8 @@
 //  - Обычные зпросы к API
 //  - LongPoll
 //  - Группировка запросов в execute
-//  - Создание очередиз запросов с огрпниченимем кол-ва звпросов в секунду
+//  - Создание очереди из запросов с огрпниченимем кол-ва звпросов в секунду
+//  - StreamingAPI
 //
 //
 // Пример использования
@@ -120,24 +121,24 @@
 //  var r0, r1, r2, r3 VkApi.RequestResult
 //
 //  go func() {
-//  ts1 := time.Now().UnixNano()
-//  c0 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "1"}))
-//  r0 = <-c0
-//  diff1 = time.Now().UnixNano() - ts1
-//  l1 <- 1
+//  	ts1 := time.Now().UnixNano()
+//  	c0 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "1"}))
+//  	r0 = <-c0
+//  	diff1 = time.Now().UnixNano() - ts1
+//  	l1 <- 1
 //  }()
 //
 //  go func() {
-//  ts3 := time.Now().UnixNano()
-//  c1 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "2050"}))
-//  c2 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "avk"}))
-//  c3 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "andrew"}))
+//  	ts3 := time.Now().UnixNano()
+//  	c1 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "2050"}))
+//  	c2 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "avk"}))
+//  	c3 := rq.Call(VkApi.CreateMethod("users.get", VkApi.P{"user_ids": "andrew"}))
 //
-//  r1 = <-c1
-//  r2 = <-c2
-//  r3 = <-c3
-//  diff3 = time.Now().UnixNano() - ts3
-//  l2 <- 1
+//  	r1 = <-c1
+//  	r2 = <-c2
+//  	r3 = <-c3
+//  	diff3 = time.Now().UnixNano() - ts3
+//  	l2 <- 1
 //  }()
 //
 //  <-l1
@@ -156,6 +157,81 @@
 //  // Катя
 //  // Александр
 //  // Андрей
+//
+// Пример StreamingAPI
+//
+// для работы с websocket используется github.com/gorilla/websocket
+//
+//  // Понадобиться сервиный ключ приложения
+//  token := "60fb7fa360fb7fa360fb7fa34b60a5f1e7660fb60fb7fa33a685687cb8b239d9a73303c"
+//
+//  // Создаем объект VkApi.StreamingClient
+//  streamingApi, err := VkApi.CreateStreamingClient(token)
+//  if err != nil {
+//  	panic(err)
+//  }
+//
+//  // Получаем все правила которые есть сейчас для этого ключа
+//  rules, err := streamingApi.GetRules()
+//  if err != nil {
+//  	panic(err)
+//  }
+//
+//  // Удаляем все правила которые были
+//  for _, rule := range rules {
+//  	println("Rule:", rule.Tag, "Value:", rule.Value)
+//  	err := streamingApi.DeleteRule(rule.Tag)
+//  	if err != nil {
+//  		panic(err)
+//  	}
+//  }
+//
+//  // Создаем свои правила
+//  rule1 := VkApi.StreamingRule{
+//  	Value: "путин",
+//  	Tag:   "putin",
+//  }
+//
+//  rule2 := VkApi.StreamingRule{
+//  	Value: "кандидиат",
+//  	Tag:   "candidate",
+//  }
+//
+//  rule3 := VkApi.StreamingRule{
+//  	Value: "биткойн",
+//  	Tag:   "bitcoin",
+//  }
+//
+//  err = streamingApi.AddRule(rule1)
+//  if err != nil {
+//  	panic(err)
+//  }
+//  err = streamingApi.AddRule(rule2)
+//  if err != nil {
+//  	panic(err)
+//  }
+//  err = streamingApi.AddRule(rule3)
+//  if err != nil {
+//  	panic(err)
+//  }
+//
+//  println("Rules created")
+//  go func () {
+//  	time.Sleep(30 * time.Second)
+//  	streamingApi.Stop() // Вот так можно остановить прослушивание сообщений
+//  	println("Stop streaming by timeout")
+//  } ()
+//
+//  println("Start lister event")
+//  err = streamingApi.Start(func(code int, event *VkApi.StreamingEvent, message *VkApi.StreamingServiceMessage) {
+//  	if event != nil {
+//  		println(event.Text, event.EventUrl)
+//  	}
+//  } )
+//
+//  if err != nil {
+//  	panic(err)
+//  }
 package VkApi
 
 import (

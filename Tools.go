@@ -72,6 +72,8 @@ func Exec(method string, params P, s interface{}) error {
 	return api.Exec(string(method), params, s)
 }
 
+// Так можно проверить что err который вернулся при запросе к API – это ошибка типа TransportError
+// Ошибки такого типа возникают из-за проблем с сетью или когда ВК недоступен
 func IsTransportError(err interface{}) bool {
 	if _, ok := err.(TransportError); ok {
 		return true
@@ -82,6 +84,8 @@ func IsTransportError(err interface{}) bool {
 	return false
 }
 
+// Так можно проверить что err который вернулся при запросе к API – это ошибка типа ApiError
+// Ошибки такого типа возникают из-за проблем с запросом, например нет прав или слишком много запросов в секунду
 func IsApiError(err interface{}) bool {
 	if _, ok := err.(ApiError); ok {
 		return true
@@ -92,6 +96,8 @@ func IsApiError(err interface{}) bool {
 	return false
 }
 
+// Так можно проверить что err который вернулся при запросе к API – это ошибка типа ApiError и код ошибки - 14
+// ВК просит нас ввести капчу
 func IsCaptchaError(err interface{}) bool {
 	if IsApiError(err) {
 		e := CastToApiError(err)

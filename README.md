@@ -5,7 +5,10 @@
 
 ```bash
 go get git@github.com:stels-cs/vk-api-tools.git
+go get github.com/gorilla/websocket
 ```
+
+github.com/gorilla/websocket необходим для работы с WebSocket в StreamingAPI
 
 - [VkApi](docs/VkApi.md)
 - [VkApi.Response](docs/VkApi.Response.md)
