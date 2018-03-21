@@ -12,6 +12,7 @@ go get git@github.com:stels-cs/vk-api-tools.git
 - [VkApi.ApiError](docs/VkApi.ApiError.md)
 - [VkApi.TransportError](docs/VkApi.TransportError.md)
 - [VkApi.AnyModel](docs/VkApi.AnyModel.md)
+- [Полная документация по пакету godoc.org/github.com/stels-cs/vk-api-tools](https://godoc.org/github.com/stels-cs/vk-api-tools)
 
 ### Пример:
 
