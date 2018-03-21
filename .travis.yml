@@ -9,5 +9,8 @@ install: true
 notifications:
   email: false
 
+before_script:
+  - go get github.com/gorilla/websocket  # WebSocket for StreamingAPI
+
 script:
   - go test -v ./tests
