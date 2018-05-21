@@ -1,8 +1,16 @@
 package VkApi
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"net/url"
+	"sort"
+	"strconv"
+	"strings"
 )
 
 var defaultApi *Api
@@ -124,4 +132,63 @@ func CastToTransportError(err interface{}) *TransportError {
 		return e
 	}
 	panic("Cant cast error to *ApiError")
+}
+
+func CalculateSignature(query map[string][]string, pattern string, secret string) string {
+	if secret == "" {
+		return "EMPTY_SECRET_" + strconv.Itoa(rand.Int())
+	}
+
+	buff := ""
+
+	index := make([]int, 0, len(query))
+	keys := make([]string, 0, len(query))
+	keyIndex := make(map[int]string, 0)
+
+	for key := range query {
+		i := strings.Index(pattern, key+"=")
+		keys = append(keys, key)
+		keyIndex[i] = key
+		index = append(index, i)
+	}
+	sort.Ints(index)
+
+	for _, i := range index {
+		key := keyIndex[i]
+		if key == "hash" || key == "sign" || key == "api_result" {
+			continue
+		}
+		payload := ""
+		if len(query[key]) != 0 {
+			payload = query[key][0]
+		}
+		if key == "ad_info" {
+			payload = strings.Replace(payload, " ", "+", -1)
+		}
+		buff += payload
+	}
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(buff))
+	sign := mac.Sum(nil)
+	return hex.EncodeToString(sign)
+}
+
+// Проверка что подпись запроса верна https://vk.com/dev/community_apps_docs
+func IsCorrectRequest(query string, secret string) bool {
+
+	v, err := url.ParseQuery(query)
+	if err != nil {
+		return false
+	}
+
+	s := v["sign"]
+
+	if len(s) != 1 {
+		return false
+	}
+
+	_s := CalculateSignature(v, query, secret)
+
+	return _s == s[0]
 }

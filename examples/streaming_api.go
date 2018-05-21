@@ -1,9 +1,52 @@
 package main
 
 import (
+	"errors"
+	"github.com/gorilla/websocket"
 	"github.com/stels-cs/vk-api-tools"
+	"io/ioutil"
 	"time"
 )
+
+type WsConnection struct {
+	c *websocket.Conn
+}
+
+func (conn *WsConnection) Close() error {
+	if conn.c == nil {
+		return nil
+	}
+	return conn.c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+}
+
+func (conn *WsConnection) ReadMessage() ([]byte, error) {
+	_, message, err := conn.c.ReadMessage()
+	return message, err
+}
+
+func GetConnection(url string) (VkApi.ConnectionInterface, error) {
+	conn, response, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		body, e := ioutil.ReadAll(response.Body)
+		if e == nil {
+			response.Body.Close()
+			return nil, errors.New(string(body))
+		}
+		return nil, err
+	}
+
+	return &WsConnection{
+		c: conn,
+	}, nil
+}
+
+func IsCloseError(err error) bool {
+	if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+		return true
+	} else {
+		return false
+	}
+}
 
 func main() {
 	// Понадобиться сервиный ключ приложения
@@ -37,8 +80,8 @@ func main() {
 	}
 
 	rule2 := VkApi.StreamingRule{
-		Value: "кандидиат",
-		Tag:   "candidate",
+		Value: "новости",
+		Tag:   "news",
 	}
 
 	rule3 := VkApi.StreamingRule{
@@ -67,7 +110,7 @@ func main() {
 	}()
 
 	println("Start lister event")
-	err = streamingApi.Start(func(code int, event *VkApi.StreamingEvent, message *VkApi.StreamingServiceMessage) {
+	err = streamingApi.Start(GetConnection, IsCloseError, func(code int, event *VkApi.StreamingEvent, message *VkApi.StreamingServiceMessage) {
 		if event != nil {
 			println(event.Text, event.EventUrl)
 		}

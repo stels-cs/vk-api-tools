@@ -32,20 +32,25 @@ type TransportError struct {
 
 func (e *TransportError) Error() string {
 	if e.ParentError != nil {
-		return e.ParentError.Error()
+		return e.DebugInfo(e.ParentError.Error())
 	} else {
-		return e.DebugInfo()
+		return e.DebugInfo("")
 	}
 }
 
-func (e *TransportError) DebugInfo() string {
+func (e *TransportError) DebugInfo(prefix string) string {
+	var s string
 	if len(e.Response) <= 1000 {
-		return "TransportError: " + callToString(e.Method, e.Params) + "\n" + e.Headers.toString() + "\n" + string(e.Response)
+		s = "TransportError: " + callToString(e.Method, e.Params) + "\n" + e.Headers.toString() + "\n" + string(e.Response)
 	} else {
 		startIndex := len(e.Response) - 1000
 		s := string(e.Response[:1000]) + "..." + string(e.Response[startIndex:])
-		return "TransportError: " + callToString(e.Method, e.Params) + "\n" + e.Headers.toString() + "\n" + s
+		s = "TransportError: " + callToString(e.Method, e.Params) + "\n" + e.Headers.toString() + "\n" + s
 	}
+	if prefix != "" {
+		s = "Error: " + prefix + "\n" + s
+	}
+	return s
 }
 
 type FakeTransport struct {

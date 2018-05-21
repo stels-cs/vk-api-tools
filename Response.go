@@ -126,3 +126,15 @@ func (r Response) Unmarshal(i interface{}) error {
 func (r Response) String() string {
 	return string(*r.Response)
 }
+
+func (r Response) Int() (int, error) {
+	return strconv.Atoi(r.String())
+}
+
+func (r Response) IntDef(def int) int {
+	i, err := r.Int()
+	if err != nil {
+		return def
+	}
+	return i
+}

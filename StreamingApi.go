@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,12 +13,22 @@ import (
 
 type StreamingCallback func(code int, event *StreamingEvent, message *StreamingServiceMessage)
 
+type ConnectionInterface interface {
+	Close() error
+	ReadMessage() ([]byte, error)
+}
+
+type WebSocketInterface interface {
+	GetConnection(url string) (ConnectionInterface, error)
+	IsCloseError(err error) bool
+}
+
 type StreamingClient struct {
 	Endpoint string `json:"endpoint"`
 	Key      string `json:"key"`
 	Http     *http.Client
 	done     chan struct{}
-	conn     *websocket.Conn
+	conn     ConnectionInterface
 }
 
 type StreamingResponse struct {
@@ -217,7 +226,10 @@ func (c *StreamingClient) ClearAllRules() error {
 	return nil
 }
 
-func (c *StreamingClient) Start(callback StreamingCallback) error {
+func (c *StreamingClient) Start(
+	getConnection func(string) (ConnectionInterface, error),
+	IsCloseError func(error) bool,
+	callback StreamingCallback) error {
 	u := url.URL{
 		Host:     c.Endpoint,
 		Scheme:   "wss",
@@ -225,22 +237,17 @@ func (c *StreamingClient) Start(callback StreamingCallback) error {
 		RawQuery: "key=" + c.Key,
 	}
 
-	conn, response, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	c.conn = conn
+	conn, err := getConnection(u.String())
 	if err != nil {
-		body, e := ioutil.ReadAll(response.Body)
-		if e == nil {
-			response.Body.Close()
-			return errors.New(string(body))
-		}
 		return err
 	}
+	c.conn = conn
 
 	defer conn.Close()
 
 	for {
-		_, message, err := conn.ReadMessage()
-		if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+		message, err := conn.ReadMessage()
+		if IsCloseError(err) {
 			return nil
 		}
 		if err != nil {
@@ -270,5 +277,5 @@ func (c *StreamingClient) Stop() {
 	if c.conn == nil {
 		return
 	}
-	c.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	c.conn.Close()
 }

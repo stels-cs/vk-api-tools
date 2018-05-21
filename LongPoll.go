@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const LongPollClosed = "LONG_POLL_CLOSED"
+
 type LongPollListener interface {
 	NewMessage(msg MessageEvent)
 	EditMessage(msg MessageEvent)
@@ -26,7 +28,7 @@ type LPCloseError struct {
 }
 
 func (e *LPCloseError) Error() string {
-	return "LONG_POLL_CLOSED"
+	return LongPollClosed
 }
 
 type LongPollServer struct {
@@ -264,5 +266,5 @@ func (s *LongPollServer) getHttpClient() *http.Client {
 }
 
 func (s *LongPollServer) GetName() string {
-	return "Long poll server"
+	return "LongPoll server"
 }

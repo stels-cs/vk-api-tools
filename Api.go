@@ -162,6 +162,49 @@
 //
 // для работы с websocket используется github.com/gorilla/websocket
 //
+//  Необходимо реализовать интерфейсы для работы с WebSockets
+//
+//  type WsConnection struct {
+//  	c *websocket.Conn
+//  }
+//
+//  func (conn *WsConnection) Close() error {
+//  	if conn.c == nil {
+//  		return nil
+// 		}
+// 		return conn.c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+//  }
+//
+//  func (conn *WsConnection) ReadMessage() ([]byte, error) {
+//  	_, message, err := conn.c.ReadMessage()
+//  	return message, err
+//  }
+//
+//  func GetConnection(url string) (VkApi.ConnectionInterface, error) {
+//  	conn, response, err := websocket.DefaultDialer.Dial(url, nil)
+//  	if err != nil {
+//  		body, e := ioutil.ReadAll(response.Body)
+//  		if e == nil {
+//  			response.Body.Close()
+//  			return nil, errors.New(string(body))
+//  		}
+//  		return nil, err
+//  	}
+//
+//  	return &WsConnection{
+//  	c: conn,
+//  	}, nil
+//  }
+//
+//  func IsCloseError(err error) bool {
+//  	if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+//  		return true
+//  	} else {
+//  		return false
+//  	}
+// 	}
+//
+//
 //  // Понадобиться сервиный ключ приложения
 //  token := "60fb7fa360fb7fa360fb7fa34b60a5f1e7660fb60fb7fa33a685687cb8b239d9a73303c"
 //
@@ -223,7 +266,7 @@
 //  } ()
 //
 //  println("Start lister event")
-//  err = streamingApi.Start(func(code int, event *VkApi.StreamingEvent, message *VkApi.StreamingServiceMessage) {
+//  err = streamingApi.Start(GetConnection, IsCloseError, func(code int, event *VkApi.StreamingEvent, message *VkApi.StreamingServiceMessage) {
 //  	if event != nil {
 //  		println(event.Text, event.EventUrl)
 //  	}
@@ -287,7 +330,11 @@ func CreateApi(t, v string, transport Transport, maxRetryCount int) *Api {
 	return api
 }
 
+//TODO: написать тест когда params == nil
 func (api *Api) run(method string, params P, retryCount int) (Response, error) {
+	if params == nil {
+		params = P{}
+	}
 	response := Response{}
 	b := json.RawMessage(``)
 	response.Response = &b

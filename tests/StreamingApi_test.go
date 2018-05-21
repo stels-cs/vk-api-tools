@@ -1,10 +1,53 @@
 package VkApiTest
 
 import (
+	"errors"
+	"github.com/gorilla/websocket"
 	"github.com/stels-cs/vk-api-tools"
+	"io/ioutil"
 	"testing"
 	"time"
 )
+
+type WsConnection struct {
+	c *websocket.Conn
+}
+
+func (conn *WsConnection) Close() error {
+	if conn.c == nil {
+		return nil
+	}
+	return conn.c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+}
+
+func (conn *WsConnection) ReadMessage() ([]byte, error) {
+	_, message, err := conn.c.ReadMessage()
+	return message, err
+}
+
+func GetConnection(url string) (VkApi.ConnectionInterface, error) {
+	conn, response, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		body, e := ioutil.ReadAll(response.Body)
+		if e == nil {
+			response.Body.Close()
+			return nil, errors.New(string(body))
+		}
+		return nil, err
+	}
+
+	return &WsConnection{
+		c: conn,
+	}, nil
+}
+
+func IsCloseError(err error) bool {
+	if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+		return true
+	} else {
+		return false
+	}
+}
 
 func TestStreamingApi(t *testing.T) {
 	if token := getToken(); token != "" {
@@ -84,7 +127,7 @@ func TestStreamingReading(t *testing.T) {
 		c := make(chan bool, 1)
 
 		go func() {
-			err = s.Start(func(code int, event *VkApi.StreamingEvent, msg *VkApi.StreamingServiceMessage) {
+			err = s.Start(GetConnection, IsCloseError, func(code int, event *VkApi.StreamingEvent, msg *VkApi.StreamingServiceMessage) {
 				if code == 100 {
 					s.Stop()
 				}

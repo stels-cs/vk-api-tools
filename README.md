@@ -5,10 +5,13 @@
 
 ```bash
 go get git@github.com:stels-cs/vk-api-tools.git
-go get github.com/gorilla/websocket
 ```
 
-github.com/gorilla/websocket необходим для работы с WebSocket в StreamingAPI
+github.com/gorilla/websocket потребуется для работы с WebSocket в StreamingAPI, но устанавливать его не обязательно
+
+```bash
+go get go get github.com/gorilla/websocket
+```
 
 - [VkApi](docs/VkApi.md)
 - [VkApi.Response](docs/VkApi.Response.md)
@@ -130,3 +133,8 @@ func main() {
 - [VkApi.TransportError](docs/VkApi.TransportError.md) - Произошла ошибка сети, или сервер ВКонтакте временно недоступен 
 - [VkApi.ApiError](docs/VkApi.ApiError.md) - API ВКонтакте вернуло ошибку
 - ```все остальные типы``` - ошибки парсинга json, только для VkApi.Exec
+
+
+### Тесты
+
+StreamingApi_test.go.txt - такой чтобы у вас не регалось на отсутсвие модуля
