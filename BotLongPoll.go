@@ -27,7 +27,7 @@ type BotLongPollServer struct {
 }
 
 type BotLongPollResponse struct {
-	Ts         string          `json:"ts"`
+	Ts         json.Number     `json:"ts,Number"`
 	Updates    []CallbackEvent `json:"updates"`
 	Failed     int             `json:"failed"`
 	MinVersion int             `json:"min_version"`
@@ -169,7 +169,7 @@ func (s *BotLongPollServer) Start() error {
 			}
 			s.onError(err)
 		} else if updates.Failed == 0 {
-			newTs, err := strconv.Atoi(updates.Ts)
+			newTs, err := strconv.Atoi(string(updates.Ts))
 			if err != nil {
 				return errors.New("Cant get new ts from updates, ints not INT: " + err.Error())
 			}
@@ -178,7 +178,7 @@ func (s *BotLongPollServer) Start() error {
 			}
 			s.onUpdate(updates.Updates)
 		} else if updates.Failed == 1 {
-			newTs, err := strconv.Atoi(updates.Ts)
+			newTs, err := strconv.Atoi(string(updates.Ts))
 			if err != nil {
 				return errors.New("Cant get new ts from updates, ints not INT: " + err.Error())
 			}
