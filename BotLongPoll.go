@@ -41,6 +41,7 @@ func GetBotLongPollServer(api *Api, logger *log.Logger) *BotLongPollServer {
 		Logger:    logger,
 		GroupId:   -1,
 		GroupName: "DELETED",
+		Ts:        0,
 	}
 }
 
@@ -155,7 +156,7 @@ func (s *BotLongPollServer) Start() error {
 		return errors.New("Cant get group info by call groups.getById with passwd token ")
 	}
 
-	err := s.up(true)
+	err := s.up(s.Ts == 0)
 	if err != nil {
 		return err
 	}

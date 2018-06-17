@@ -52,12 +52,13 @@ type CallbackMessage struct {
 			City      string  `json:"city"`
 		} `json:"place"`
 	} `json:"geo"` //
-	Attachments struct {
+	Attachments []struct {
 		Type string `json:"type"`
 	} `json:"attachments"` //
 	FwdMessages []MessageEvent `json:"fwd_messages"` //
 	Emoji       int            `json:"emoji"`        //, [0,1]
-	Important   int            `json:"important"`    //, [0,1]
+	Important   bool           `json:"important"`    //, [0,1]
 	Deleted     int            `json:"deleted"`      //, [0,1]
 	RandomId    int            `json:"random_id"`    //
+	Payload     string         `json:"payload"`
 }
