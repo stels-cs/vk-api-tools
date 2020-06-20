@@ -3,6 +3,7 @@ package VkApi
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var defaultApi *Api
@@ -175,6 +177,7 @@ func CalculateSignature(query map[string][]string, pattern string, secret string
 }
 
 // Проверка что подпись запроса верна https://vk.com/dev/community_apps_docs
+// Устаревший метод
 func IsCorrectRequest(query string, secret string) bool {
 
 	v, err := url.ParseQuery(query)
@@ -189,6 +192,52 @@ func IsCorrectRequest(query string, secret string) bool {
 	}
 
 	_s := CalculateSignature(v, query, secret)
+
+	return _s == s[0]
+}
+
+// Проверка что подпись запроса MiniAps верна https://vk.com/dev/vk_apps_docs3?f=6.%2B%D0%9F%D0%B0%D1%80%D0%B0%D0%BC%D0%B5%D1%82%D1%80%D1%8B%2B%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA%D0%B0
+func CalculateMiniAppsSignature(query map[string][]string, secret string) string {
+	if secret == "" {
+		return "EMPTY_SECRET_" + strconv.Itoa(rand.Int()) + strconv.Itoa(int(time.Now().Unix()))
+	}
+
+	filter := make(url.Values)
+	for key, value := range query {
+		if !strings.HasPrefix(key, "vk_") {
+			continue
+		}
+		if len(value) > 0 {
+			filter.Add(key, value[0])
+		}
+	}
+
+	payload := filter.Encode()
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(payload))
+	sign := mac.Sum(nil)
+	baseSign := base64.StdEncoding.EncodeToString(sign)
+	baseSign = strings.TrimRight(baseSign, "=")
+	baseSign = strings.ReplaceAll(baseSign, "+", "-")
+	baseSign = strings.ReplaceAll(baseSign, "/", "_")
+	return baseSign
+}
+
+// Проверка что подпись запроса MiniAps верна https://vk.com/dev/vk_apps_docs3?f=6.%2B%D0%9F%D0%B0%D1%80%D0%B0%D0%BC%D0%B5%D1%82%D1%80%D1%8B%2B%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA%D0%B0
+func IsCorrectMiniAppsRequest(query string, secret string) bool {
+
+	v, err := url.ParseQuery(query)
+	if err != nil {
+		return false
+	}
+
+	s := v["sign"]
+
+	if len(s) != 1 {
+		return false
+	}
+
+	_s := CalculateMiniAppsSignature(v, secret)
 
 	return _s == s[0]
 }

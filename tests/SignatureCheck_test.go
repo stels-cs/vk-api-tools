@@ -2,6 +2,8 @@ package VkApiTest
 
 import (
 	"github.com/stels-cs/vk-api-tools"
+	"github.com/stretchr/testify/assert"
+	"net/url"
 	"testing"
 )
 
@@ -13,5 +15,19 @@ func TestSignatureCalculation(t *testing.T) {
 	if VkApi.IsCorrectRequest(request, appSecret) == false {
 		t.Error("Expected correct request, got incorrent")
 	}
+
+}
+
+func TestMiniAppsSignature(t *testing.T) {
+
+	secret := "rkwdOT04kUh28RDEC9zr"
+	request := "vk_access_token_settings=friends%2Cgroups&vk_app_id=6825462&vk_are_notifications_enabled=0&vk_is_app_user=1&vk_language=ru&vk_platform=desktop_web&vk_user_id=19039187&sign=vBBPIysvzccFUn_e55JCGxZBnmxpXeh92XpiAY9gcv8"
+	sign := "vBBPIysvzccFUn_e55JCGxZBnmxpXeh92XpiAY9gcv8"
+
+	v, err := url.ParseQuery(request)
+	assert.Nil(t, err)
+	assert.Equal(t, sign, VkApi.CalculateMiniAppsSignature(v, secret))
+
+	assert.Equal(t, true, VkApi.IsCorrectMiniAppsRequest(request, secret))
 
 }
