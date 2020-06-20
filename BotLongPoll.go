@@ -23,7 +23,6 @@ type BotLongPollServer struct {
 	stop       chan bool
 	api        *Api
 	GroupId    int
-	GroupName  string
 }
 
 type BotLongPollResponse struct {
@@ -34,14 +33,13 @@ type BotLongPollResponse struct {
 	MaxVersion int             `json:"nax_version"`
 }
 
-func GetBotLongPollServer(api *Api, logger *log.Logger) *BotLongPollServer {
+func GetBotLongPollServer(api *Api, logger *log.Logger, groupId int) *BotLongPollServer {
 	return &BotLongPollServer{
-		api:       api,
-		stop:      make(chan bool, 1),
-		Logger:    logger,
-		GroupId:   -1,
-		GroupName: "DELETED",
-		Ts:        0,
+		api:     api,
+		stop:    make(chan bool, 1),
+		Logger:  logger,
+		GroupId: groupId,
+		Ts:      0,
 	}
 }
 
@@ -92,7 +90,7 @@ func (s *BotLongPollServer) getUpdates() (*BotLongPollResponse, error) {
 			return nil, err
 		case res := <-requestResponse:
 			data, err := ioutil.ReadAll(res.Body)
-			res.Body.Close()
+			_ = res.Body.Close()
 			if err != nil {
 				return nil, &TransportError{
 					string(s.Server),
@@ -144,18 +142,6 @@ func (s *BotLongPollServer) Stop() {
 }
 
 func (s *BotLongPollServer) Start() error {
-
-	group, apiError := s.api.Call("groups.getById", nil)
-	if apiError != nil {
-		return apiError
-	}
-	s.GroupId = group.QIntDef("0.id", 0)
-	s.GroupName = group.QStringDef("0.name", "DELETED")
-	if s.GroupId == 0 {
-		s.onErrorS("Called groups.getById, but got no group, perhaps api changes exiting....")
-		return errors.New("Cant get group info by call groups.getById with passwd token ")
-	}
-
 	err := s.up(s.Ts == 0)
 	if err != nil {
 		return err
@@ -232,9 +218,5 @@ func (s *BotLongPollServer) getHttpClient() *http.Client {
 }
 
 func (s *BotLongPollServer) GetName() string {
-	if s.GroupId != -1 {
-		return "BotLongPoll at " + s.GroupName + " #" + strconv.Itoa(s.GroupId)
-	} else {
-		return "BotLongPoll"
-	}
+	return "BotLongPoll"
 }

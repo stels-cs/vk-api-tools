@@ -19,26 +19,32 @@ type RequestItem struct {
 }
 
 type RequestQueue struct {
-	api              *Api
-	queue            []RequestItem
-	lock             sync.Mutex
-	stop             chan bool
-	item             chan RequestItem
+	api   *Api
+	queue []RequestItem
+	lock  sync.Mutex
+
+	stop      chan bool
+	item      chan RequestItem
+	afterCall chan bool
+
 	lastExecuteTime  int64
 	lastExecuteCount int
 	timer            *time.Timer
 	timerUp          bool
 	rps              int
+
+	stopFlag bool
 }
 
 func GetRequestQueue(api *Api, rps int) *RequestQueue {
 	return &RequestQueue{
-		api:   api,
-		lock:  sync.Mutex{},
-		stop:  make(chan bool, 1),
-		item:  make(chan RequestItem, rps*50),
-		timer: time.NewTimer(0),
-		rps:   rps,
+		api:       api,
+		lock:      sync.Mutex{},
+		stop:      make(chan bool, 1),
+		afterCall: make(chan bool, 1),
+		item:      make(chan RequestItem, rps*50),
+		timer:     time.NewTimer(0),
+		rps:       rps,
 	}
 }
 
@@ -49,15 +55,24 @@ func (rq *RequestQueue) Call(m Method) chan RequestResult {
 }
 
 func (rq *RequestQueue) Start() {
+	rq.stopFlag = false
 	for {
 		select {
 		case <-rq.stop:
-			return
+			rq.stopFlag = true
+			rq.upTimer()
 		case item := <-rq.item:
 			rq.toQueue(item)
 			rq.execute()
 		case <-rq.timer.C:
+			if rq.stopFlag && len(rq.queue) == 0 {
+				return
+			}
 			rq.execute()
+		case <-rq.afterCall:
+			if rq.stopFlag && len(rq.queue) == 0 {
+				return
+			}
 		}
 	}
 }
@@ -164,6 +179,8 @@ func (rq *RequestQueue) execute() {
 		}
 	}()
 }
+
+//Возможно очередь течет
 func (rq *RequestQueue) toQueue(item RequestItem) {
 	rq.queue = append(rq.queue, item)
 }
