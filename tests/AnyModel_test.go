@@ -2,8 +2,8 @@ package VkApiTest
 
 import (
 	"errors"
-	"github.com/stels-cs/vk-api-tools"
 	"testing"
+	VkApi "vk-api-tools"
 )
 
 func TestUseCase(t *testing.T) {

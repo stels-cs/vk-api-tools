@@ -1,9 +1,9 @@
 package VkApiTest
 
 import (
-	"github.com/stels-cs/vk-api-tools"
 	"os"
 	"testing"
+	VkApi "vk-api-tools"
 )
 
 var envTokenTag = "VK_ACCESS_TOKEN"

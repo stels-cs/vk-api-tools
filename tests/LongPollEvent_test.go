@@ -2,10 +2,10 @@ package VkApiTest
 
 import (
 	"encoding/json"
-	"github.com/stels-cs/vk-api-tools"
 	"reflect"
 	"strconv"
 	"testing"
+	VkApi "vk-api-tools"
 )
 
 func TestFillNewMessageEvent(t *testing.T) {

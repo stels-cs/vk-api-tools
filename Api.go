@@ -43,7 +43,7 @@
 //	//Катя – Санкт-Петербург
 //	//Александр – Москва
 //
-// Пример с LongPoll
+// # Пример с LongPoll
 //
 // Типа бот
 //
@@ -297,7 +297,7 @@ func (p *P) toString() string {
 }
 
 func (p *P) toJson() ([]byte, error) {
-	return json.Marshal(p)
+	return p.JSON()
 }
 
 func (p *P) JSON() ([]byte, error) {

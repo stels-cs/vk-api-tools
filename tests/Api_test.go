@@ -1,8 +1,9 @@
 package VkApiTest
 
 import (
-	"github.com/stels-cs/vk-api-tools"
+	"github.com/stretchr/testify/assert"
 	"testing"
+	VkApi "vk-api-tools"
 )
 
 func ft(s string) *VkApi.FakeTransport {
@@ -58,4 +59,17 @@ func TestApiMessagesSendWithError(t *testing.T) {
 	} else {
 		t.Errorf("Got error but is not ApiError: %s", err.Error())
 	}
+}
+
+func TestApiSerialise(t *testing.T) {
+	m := VkApi.GetApiMethod("messages.send", VkApi.P{
+		"message":   "See link https://vk.com/id1?var1=2&var2=3",
+		"peer_id":   "2050",
+		"random_id": "0",
+	})
+
+	ep := VkApi.ExecutePack{}
+	ep.Add(m)
+	code := ep.GetCode()
+	assert.Equalf(t, "return[API.messages.send({\"message\":\"See link https://vk.com/id1?var1=2&var2=3\",\"peer_id\":\"2050\",\"random_id\":\"0\"}\n)];", code, "bad code generated")
 }

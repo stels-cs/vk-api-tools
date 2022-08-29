@@ -3,10 +3,10 @@ package VkApiTest
 import (
 	"errors"
 	"github.com/gorilla/websocket"
-	"github.com/stels-cs/vk-api-tools"
 	"io/ioutil"
 	"testing"
 	"time"
+	VkApi "vk-api-tools"
 )
 
 type WsConnection struct {

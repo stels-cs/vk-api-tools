@@ -1,10 +1,10 @@
 package VkApiTest
 
 import (
-	"github.com/stels-cs/vk-api-tools"
 	"github.com/stretchr/testify/assert"
 	"net/url"
 	"testing"
+	VkApi "vk-api-tools"
 )
 
 func TestSignatureCalculation(t *testing.T) {

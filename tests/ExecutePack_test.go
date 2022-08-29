@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stels-cs/vk-api-tools"
 	"testing"
 	"time"
+	VkApi "vk-api-tools"
 )
 
 type User struct {
